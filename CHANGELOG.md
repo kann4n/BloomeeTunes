@@ -1,3 +1,84 @@
+## [2.13.2] - 2025-11-30
+
+### Added
+- **Library Item Search Box**: Added search functionality for library items to improve navigation and discovery.
+- **New Search in Playlist Database Function**: Implemented enhanced search capabilities within playlist databases.
+- **DNS Checker**: Added DNS connectivity checking feature for better network diagnostics.
+- **Touch Device Support**: Improved support for touch-based interactions across the application.
+- **Redesigned Up Next Panel**: Completely redesigned the "Up Next" panel with modern UI elements.
+- **Full Screen Lyrics Viewer**: Introduced a new full-screen lyrics viewing mode with enhanced display options.
+- **Auto Scroll in Queue**: Automatic scroll to every song changed in the queue.
+
+### Changed
+- **New Progress Bar for Player**: Implemented a new progress bar design for the media player.
+- **Up Next Panel and Song Tile Improvements**: Enhanced the "Up Next" panel and song tiles for better usability and appearance.
+- **Ambient Background Enhancement**: Improved ambient background effects throughout the application.
+- **Song Info UI Updates**: Updated the song information display interface for better readability.
+- **Add to Playlist UI**: Redesigned the "Add to Playlist" feature with circular stacked avatars and improved layout.
+- **Player Enhancements**: Various improvements to the media player functionality and user experience.
+- **Custom Animated List**: Implemented custom animated lists for smoother UI transitions.
+- **Subtitle Override in Song Model**: Added ability to override subtitles in song metadata.
+- **Fullscreen Up Next Panel**: Made the fullscreen "Up Next" panel translucent for better visual integration.
+- **Lyric Widget Enhancements**: Improved colors and icons in the lyrics widget.
+- **Player UI Optimizations**: Optimized player interface for better performance and usability.
+- **Gradient Adjustments**: Fine-tuned gradient effects in the player interface.
+- **Media Kit Integration**: Switched to MediaKit for Android platform for improved media handling.
+
+### Fixed
+- **Font Fixes**: Resolved font rendering issues across the application.
+- **Mini Player Fixes**: Fixed bleed and progress bar issues in the mini player.
+- **Warning Fixes**: Addressed various deprecation warnings, including `.withOpacity` usage.
+- **Full Screen Lyric View**: Corrected display issues in full-screen lyrics mode.
+- **Auto Wake Controls**: Fixed auto-scroll behavior in wake controls.
+- **Up Next Panel**: Resolved various issues with the "Up Next" panel functionality.
+- **Desktop Handle Fix**: Fixed panel handle behavior on desktop platforms.
+- **Player Reconfiguration**: Corrected player reconfiguration issues on Android.
+- **JSON File Opening**: Partially addressed issues with JSON file handling (ongoing).
+
+## [2.12.5] - 2025-10-25
+- **Flutter Version Upgrade**: Updated Flutter version to 3.35.4 with CI/CD pipeline improvements.
+- **Package Upgrades**: Updated various dependencies and packages for better performance and security.
+- **Connectivity Improvements**: Enhanced connectivity handling after package upgrades.
+- **YouTube Shared Music**: Added support for playing YouTube shared music links.
+- **Audio Source Optimization**: Removed concatenating audio source usage for improved performance.
+- **Network Failure Handling**: Added maximum limit of 10 retries before shifting to next song on network failures.
+- **Track Recovery**: Improved track recovery when lost during network interruptions.
+- **About Page Refactor**: Refactored the about section for better maintainability.
+- **Color Analyzer**: Added new color analyzer functionality from URLs.
+- **Chart Widget Fixes**: Fixed image display issues in chart widgets.
+- **Billboard Image Fixes**: Resolved image loading issues in Billboard charts.
+
+### Fixed
+- **Isar Version Compatibility**: Fixed Isar database version compatibility issues.
+- **Code Reverts**: Reverted problematic code changes to maintain stability.
+
+## [2.12.4] - 2025-09-28
+
+### Added
+- **Bulk Download Feature**: Added the ability to select and download multiple songs from playlists at once.
+- **Enhanced Queue Management**: Added `showPlayNext` and `showAddtoQueue` boolean controls for better UI customization.
+- **Song Options in Up Next Panel**: Added song options menu in the "Up Next" panel for better track management.
+- **Recently Played Tracking**: Implemented recently played tracking with configurable thresholds (40% playback or 15 seconds).
+- **Trendshift Badge**: Added Trendshift badge to the project.
+
+### Changed
+- **Audio Service Updates**: Updated audio service configuration and handling.
+- **Bulk Download UI Enhancements**: Improved the bulk download progress dialog and user experience.
+- **Queue Title Broadcasting**: Fixed queue title override to properly broadcast updated queue titles.
+- **Button Renaming**: Changed "Play Now" button to "Play with Mix" for clarity.
+- **Player Error Handling**: Enhanced error handling for network-related playback issues.
+- **Snackbar Improvements**: Enhanced snackbar notifications throughout the app.
+- **Volume Control**: Fixed volume sliding on cover art for manual control.
+- **YouTube Download Fix**: Temporary fix for YouTube downloading (requires future maintenance for youtube_explode_dart).
+- **Restore Warning**: Clarified warning messages for restore operations.
+- **Code Cleanup**: General code cleanup and optimizations.
+- **Documentation Updates**: Updated README, GitHub Pages, and fastlane changelog.
+- **Workflow Improvements**: Enhanced GitHub Actions workflows for better CI/CD.
+- **Funding Information**: Updated funding URLs and configuration.
+
+### Fixed
+- **Bulk Download Snackbars**: Fixed snackbar notifications to show only one message for bulk downloads instead of individual messages per song.
+
 ## [2.12.3] - 2025-08-17
 
 ### Added

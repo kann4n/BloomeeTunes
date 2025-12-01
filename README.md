@@ -1,8 +1,9 @@
  ![BloomeeTunes](./assets/docs/bloomeetunes_new_banner.png)
 **<h1 align=center>Bloomee🌸</h1>**
-<p align="center"><a href="https://github.com/HemantKArya/BloomeeTunes/releases/latest"><img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/HemantKArya/BloomeeTunes/total?style=for-the-badge" >
+<p align="center"><img src=https://img.shields.io/sourceforge/dt/bloomee?style=for-the-badge&logoSize=auto&label=DOWNLOADS(SF)
+ /> <a href="https://github.com/HemantKArya/BloomeeTunes/releases/latest"><img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/HemantKArya/BloomeeTunes/total?style=for-the-badge&label=DOWNLOADS(GH)" >
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/HemantKArya/BloomeeTunes?display_name=release&style=for-the-badge&color=f01d7c" ></a>
-<img alt="GitHub License" src="https://img.shields.io/github/license/HemantKArya/BloomeeTunes?style=for-the-badge&color=1881cc" > <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/HemantKArya/BloomeeTunes/checkout.yml?style=for-the-badge" > <img src=https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white /><br><img src=https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white > <img src=https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white /> <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black"/>
+<img alt="GitHub License" src="https://img.shields.io/github/license/HemantKArya/BloomeeTunes?style=for-the-badge&color=1881cc" > <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/HemantKArya/BloomeeTunes/checkout.yml?style=for-the-badge" > <br><img src=https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white > <img src=https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white /> <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black"/>
 </p>
 <p align="center">
     <a href="https://trendshift.io/repositories/11533" target="_blank"><img src="https://trendshift.io/api/badge/repositories/11533" alt="HemantKArya%2FBloomeeTunes | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
@@ -60,6 +61,8 @@ Bloomee is experimental cross-platform open Source Music player designed to brin
 🌱 **Every Note Counts:** Your contribution, no matter how small, adds to the richness of Bloomee. Whether you're fixing a bug, enhancing features, or suggesting improvements, your notes in our melody matter. Also I'm new to flutter, So every contribution will help me and this project.
 
 🚀 **Learn and Grow:** Contribute to Bloomee and enhance your Flutter and BLoC skills. Every pull request is an opportunity to learn, and we encourage contributors of all levels to join the journey.
+
+To ensure a smooth and collaborative contribution process, we kindly ask that you first open an issue to discuss your ideas or proposed changes. This helps us align on the best approach and makes the review process more efficient. For detailed guidelines, please refer to our [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **How to Contribute:**
 

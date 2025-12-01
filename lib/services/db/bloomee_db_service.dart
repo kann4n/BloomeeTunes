@@ -12,7 +12,7 @@ import 'package:Bloomee/routes_and_consts/global_str_consts.dart';
 import 'package:Bloomee/services/db/backup_validator.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:Bloomee/services/db/GlobalDB.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -713,6 +713,23 @@ class BloomeeDBService {
         .playlistNameEqualTo(playlistName)
         .findFirstSync();
     return mediaPlaylistDB?.mediaItems.toList();
+  }
+
+  /// Returns list of playlist names that contain the given song (by mediaID/permaURL)
+  static Future<List<String>> getPlaylistsContainingSong(String mediaId) async {
+    Isar isarDB = await db;
+
+    // Find the media item by its ID (permaURL)
+    MediaItemDB? mediaItem =
+        isarDB.mediaItemDBs.filter().mediaIDEqualTo(mediaId).findFirstSync();
+
+    if (mediaItem == null) {
+      return [];
+    }
+
+    // Get all playlists this media item belongs to
+    final playlists = mediaItem.mediaInPlaylistsDB.toList();
+    return playlists.map((p) => p.playlistName).toList();
   }
 
   static Future<List<MediaPlaylist>> getPlaylists4Library() async {
@@ -1483,6 +1500,47 @@ class BloomeeDBService {
     Isar isarDB = await db;
     isarDB.writeTxnSync(() =>
         isarDB.lyricsDBs.filter().mediaIDEqualTo(mediaID).deleteAllSync());
+  }
+
+  /// Efficiently search for songs in library playlists by title or artist
+  /// Uses direct DB filtering instead of loading all songs into memory
+  static Future<List<(MediaItemModel, String)>> searchMediaItemsInLibrary(
+      String query) async {
+    if (query.trim().isEmpty) return [];
+
+    Isar isarDB = await db;
+    final lowerQuery = query.toLowerCase();
+
+    // Get all media items that match the query (title or artist)
+    final matchingItems = await isarDB.mediaItemDBs
+        .filter()
+        .group((q) => q
+            .titleContains(lowerQuery, caseSensitive: false)
+            .or()
+            .artistContains(lowerQuery, caseSensitive: false))
+        .findAll();
+
+    // For each matching item, find which playlist(s) it belongs to
+    List<(MediaItemModel, String)> results = [];
+    for (final item in matchingItems) {
+      // Load the links (IsarLinks are lazy loaded)
+      await item.mediaInPlaylistsDB.load();
+
+      // Check if this item is in any playlist
+      final playlists = item.mediaInPlaylistsDB.toList();
+      if (playlists.isNotEmpty) {
+        // Skip system playlists, find first user playlist
+        for (final playlist in playlists) {
+          if (playlist.playlistName != recentlyPlayedPlaylist &&
+              playlist.playlistName != downloadPlaylist) {
+            results.add((MediaItemDB2MediaItem(item), playlist.playlistName));
+            break;
+          }
+        }
+      }
+    }
+
+    return results;
   }
 }
 

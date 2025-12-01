@@ -54,6 +54,11 @@ class PlayerErrorHandler {
   final Map<String, DateTime> _lastRetryTime = {};
   final RetryConfig _retryConfig = const RetryConfig();
   Timer? _reconnectionTimer;
+  // Track whether an automatic skip has already been performed after an error
+  // This prevents the player from continuously skipping through the queue
+  // after repeated failures. It will be reset when errors/retries are cleared.
+  bool _autoSkipPerformed = false;
+  int _totalRetryCount = 0;
 
   // Callbacks for handling different scenarios
   Function()? onSkipToNext;
@@ -76,6 +81,13 @@ class PlayerErrorHandler {
       return PlayerErrorType.permissionError;
     } else if (error.toString().toLowerCase().contains('buffer')) {
       return PlayerErrorType.bufferingError;
+    } else if (error.toString().toLowerCase().contains('loading interrupted') ||
+        error
+            .toString()
+            .toLowerCase()
+            .contains('failed to create file cache')) {
+      return PlayerErrorType
+          .unknownError; // Treat MPV issues as unknown, no retry
     }
     return PlayerErrorType.unknownError;
   }
@@ -113,7 +125,10 @@ class PlayerErrorHandler {
         _scheduleRetry(mediaItem);
         break;
       default:
-        _scheduleRetry(mediaItem);
+        // For unknown errors (like MPV warnings), don't retry as they might be harmless
+        log('Non-retriable error encountered: $error',
+            name: 'PlayerErrorHandler');
+        break;
     }
   }
 
@@ -137,19 +152,27 @@ class PlayerErrorHandler {
   void _scheduleRetry(MediaItem? currentItem) {
     if (currentItem == null) return;
 
+    if (_totalRetryCount >= 10) {
+      log('Total retry limit reached (10), skipping to next for ${currentItem.title}',
+          name: 'PlayerErrorHandler');
+      _skipToNextOnError(currentItem);
+      return;
+    }
+
     final itemId = currentItem.id;
     final attempts = _retryAttempts[itemId] ?? 0;
 
     if (attempts >= _retryConfig.maxRetries) {
       log('Max retry attempts reached for ${currentItem.title}',
           name: 'PlayerErrorHandler');
-      _skipToNextOnError();
+      _skipToNextOnError(currentItem);
       return;
     }
 
     final delay = _calculateRetryDelay(attempts);
     _retryAttempts[itemId] = attempts + 1;
     _lastRetryTime[itemId] = DateTime.now();
+    _totalRetryCount++;
 
     _reconnectionTimer?.cancel();
     _reconnectionTimer = Timer(delay, () async {
@@ -165,10 +188,30 @@ class PlayerErrorHandler {
     return delay > _retryConfig.maxDelay ? _retryConfig.maxDelay : delay;
   }
 
-  void _skipToNextOnError() async {
-    SnackbarService.showMessage('Failed to play current song, skipping to next',
+  Future<void> _skipToNextOnError(MediaItem? currentItem) async {
+    // If we've already auto-skipped once for an error, stop auto-skipping
+    // further and inform the user instead. This avoids a nonstop chain of
+    // automatic skips when many tracks fail in a row.
+    final title = currentItem?.title ?? 'current song';
+
+    if (_autoSkipPerformed) {
+      // Auto-skip already performed; inform the user and stop further automatic skips.
+      SnackbarService.showMessage(
+          'Unable to auto-skip further after multiple failures. Please check your connection or skip manually.',
+          duration: const Duration(seconds: 4));
+      return;
+    }
+
+    // Perform a single automatic skip and mark it so we don't continuously skip.
+    SnackbarService.showMessage(
+        'Failed to play "$title". Skipping to next (automatic).',
         duration: const Duration(seconds: 3));
-    onSkipToNext?.call();
+    try {
+      onSkipToNext?.call();
+    } catch (e) {
+      log('Error while calling onSkipToNext: $e', name: 'PlayerErrorHandler');
+    }
+    _autoSkipPerformed = true;
   }
 
   void clearError() {
@@ -178,6 +221,10 @@ class PlayerErrorHandler {
   void clearRetryAttempts(String mediaId) {
     _retryAttempts.remove(mediaId);
     _lastRetryTime.remove(mediaId);
+    // If the given mediaId had been skipped previously, allow auto-skip again
+    // for future errors once normal playback resumes.
+    _autoSkipPerformed = false;
+    _totalRetryCount = 0; // Reset total retry count on successful playback
   }
 
   void dispose() {

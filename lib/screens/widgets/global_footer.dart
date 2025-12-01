@@ -1,4 +1,7 @@
+import 'package:Bloomee/blocs/player_overlay/player_overlay_cubit.dart';
+import 'package:Bloomee/screens/widgets/player_overlay_wrapper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -12,44 +15,58 @@ class GlobalFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: navigationShell.currentIndex == 0,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          navigationShell.goBranch(0);
-        }
-      },
-      child: Scaffold(
-        body: ResponsiveBreakpoints.of(context).isMobile
-            ? _AnimatedPageView(navigationShell: navigationShell)
-            : Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: VerticalNavBar(navigationShell: navigationShell),
-                  ),
-                  Expanded(
-                    child: _AnimatedPageView(navigationShell: navigationShell),
-                  ),
-                ],
+    return PlayerOverlayWrapper(
+      child: PopScope(
+        canPop: !context.watch<PlayerOverlayCubit>().state &&
+            navigationShell.currentIndex == 0,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            final playerOverlayCubit = context.read<PlayerOverlayCubit>();
+            // First check if player overlay is open
+            if (playerOverlayCubit.state) {
+              // First try to collapse UpNext panel if expanded
+              if (!playerOverlayCubit.collapseUpNextPanel()) {
+                // If panel was not expanded, hide the player
+                playerOverlayCubit.hidePlayer();
+              }
+            } else {
+              navigationShell.goBranch(0);
+            }
+          }
+        },
+        child: Scaffold(
+          body: ResponsiveBreakpoints.of(context).isMobile
+              ? _AnimatedPageView(navigationShell: navigationShell)
+              : Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: VerticalNavBar(navigationShell: navigationShell),
+                    ),
+                    Expanded(
+                      child:
+                          _AnimatedPageView(navigationShell: navigationShell),
+                    ),
+                  ],
+                ),
+          backgroundColor: Default_Theme.themeColor,
+          drawerScrimColor: Default_Theme.themeColor,
+          bottomNavigationBar: SafeArea(
+              child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const MiniPlayerWidget(),
+              Container(
+                color: Colors.transparent,
+                margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                child: ResponsiveBreakpoints.of(context).isMobile
+                    ? HorizontalNavBar(navigationShell: navigationShell)
+                    : const Wrap(),
               ),
-        backgroundColor: Default_Theme.themeColor,
-        drawerScrimColor: Default_Theme.themeColor,
-        bottomNavigationBar: SafeArea(
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const MiniPlayerWidget(),
-            Container(
-              color: Colors.transparent,
-              margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-              child: ResponsiveBreakpoints.of(context).isMobile
-                  ? HorizontalNavBar(navigationShell: navigationShell)
-                  : const Wrap(),
-            ),
-          ],
-        )),
+            ],
+          )),
+        ),
       ),
     );
   }
@@ -145,7 +162,7 @@ class VerticalNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NavigationRail(
-      backgroundColor: Default_Theme.themeColor.withOpacity(0.3),
+      backgroundColor: Default_Theme.themeColor.withValues(alpha: 0.3),
       destinations: const [
         NavigationRailDestination(
             icon: Icon(MingCute.home_4_fill), label: Text('Home')),
@@ -184,14 +201,14 @@ class HorizontalNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return GNav(
       gap: 7.0,
-      tabBackgroundColor: Default_Theme.accentColor2.withOpacity(0.22),
+      tabBackgroundColor: Default_Theme.accentColor2.withValues(alpha: 0.22),
       color: Default_Theme.primaryColor2,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       activeColor: Default_Theme.accentColor2,
       textStyle: Default_Theme.secondoryTextStyleMedium.merge(
           const TextStyle(color: Default_Theme.accentColor2, fontSize: 18)),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      backgroundColor: Default_Theme.themeColor.withOpacity(0.3),
+      backgroundColor: Default_Theme.themeColor.withValues(alpha: 0.3),
       tabs: const [
         GButton(
           icon: MingCute.home_4_fill,

@@ -4,6 +4,7 @@ import 'package:Bloomee/model/MediaPlaylistModel.dart';
 import 'package:Bloomee/model/songModel.dart';
 import 'package:Bloomee/screens/screen/library_views/cubit/current_playlist_cubit.dart';
 import 'package:Bloomee/screens/screen/library_views/more_opts_sheet.dart';
+import 'package:Bloomee/blocs/downloader/cubit/downloader_cubit.dart';
 import 'package:Bloomee/screens/widgets/more_bottom_sheet.dart';
 import 'package:Bloomee/screens/widgets/playPause_widget.dart';
 import 'package:Bloomee/screens/widgets/sign_board_widget.dart';
@@ -14,7 +15,6 @@ import 'package:Bloomee/services/db/cubit/bloomee_db_cubit.dart';
 import 'package:Bloomee/theme_data/default.dart';
 import 'package:Bloomee/utils/imgurl_formator.dart';
 import 'package:Bloomee/utils/load_Image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -89,13 +89,15 @@ class PlaylistView extends StatelessWidget {
                             icon: const Icon(
                               Icons.arrow_back,
                             ),
-                            hoverColor: getFBColor(context)[1].withOpacity(0.3),
+                            hoverColor:
+                                getFBColor(context)[1].withValues(alpha: 0.3),
                             highlightColor:
-                                getFBColor(context)[0].withOpacity(0.6),
+                                getFBColor(context)[0].withValues(alpha: 0.6),
                             color: getFBColor(context)[0],
                             style: ButtonStyle(
                               backgroundColor: WidgetStatePropertyAll(
-                                  getFBColor(context)[1].withOpacity(0.1)),
+                                  getFBColor(context)[1]
+                                      .withValues(alpha: 0.1)),
                             ),
                             onPressed: () {
                               context.pop();
@@ -177,9 +179,9 @@ class PlaylistView extends StatelessWidget {
                                           end: Alignment.bottomCenter,
                                           colors: [
                                             getFBColor(context)[1]
-                                                .withOpacity(0.0),
+                                                .withValues(alpha: 0.0),
                                             getFBColor(context)[1]
-                                                .withOpacity(1),
+                                                .withValues(alpha: 1),
                                           ],
                                           stops: const [0.5, 1],
                                         ),
@@ -194,8 +196,9 @@ class PlaylistView extends StatelessWidget {
                                         filter: ImageFilter.blur(
                                             sigmaX: 30, sigmaY: 30),
                                         child: Container(
-                                          color: Colors.black.withOpacity(
-                                              0), // Keep the container color transparent
+                                          color: Colors.black.withValues(
+                                              alpha:
+                                                  0), // Keep the container color transparent
                                         ),
                                       ),
                                     ),
@@ -218,7 +221,8 @@ class PlaylistView extends StatelessWidget {
                                                     BoxShadow(
                                                       color:
                                                           getFBColor(context)[1]
-                                                              .withOpacity(0.2),
+                                                              .withValues(
+                                                                  alpha: 0.2),
                                                       spreadRadius: 5,
                                                       blurRadius: 7,
                                                       offset: const Offset(0,
@@ -249,13 +253,14 @@ class PlaylistView extends StatelessWidget {
                                             MingCute.information_line,
                                           ),
                                           hoverColor: getFBColor(context)[1]
-                                              .withOpacity(0.2),
+                                              .withValues(alpha: 0.2),
                                           color: getFBColor(context)[0],
                                           style: ButtonStyle(
                                             backgroundColor:
                                                 WidgetStatePropertyAll(
                                                     getFBColor(context)[1]
-                                                        .withOpacity(0.05)),
+                                                        .withValues(
+                                                            alpha: 0.05)),
                                           ),
                                           onPressed: () {
                                             // dialog to show all infromation about the playlist (playlist name, source, description, original link, type, etc  )
@@ -284,39 +289,189 @@ class PlaylistView extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
-                                  child: Text(
-                                    "${state.mediaPlaylist.isAlbum ? "Album" : "Playlist"} • ${state.mediaPlaylist.mediaItems.length} Songs \nby ${state.mediaPlaylist.artists ?? 'You'}",
-                                    style: Default_Theme.secondoryTextStyle
-                                        .merge(TextStyle(
-                                      color: Default_Theme.primaryColor1
-                                          .withOpacity(0.8),
-                                      fontSize: 12,
-                                    )),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              "${state.mediaPlaylist.isAlbum ? 'Album' : 'Playlist'} • ${state.mediaPlaylist.mediaItems.length} Songs",
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: Default_Theme
+                                                  .secondoryTextStyle
+                                                  .merge(TextStyle(
+                                                color: Default_Theme
+                                                    .primaryColor1
+                                                    .withValues(alpha: 0.9),
+                                                fontSize: 12,
+                                              )),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'by ${state.mediaPlaylist.artists ?? 'You'}',
+                                        style: Default_Theme.secondoryTextStyle
+                                            .merge(TextStyle(
+                                          color: Default_Theme.primaryColor1
+                                              .withValues(alpha: 0.8),
+                                          fontSize: 12,
+                                        )),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                ButtonBar(
-                                  buttonPadding: EdgeInsets.zero,
+                                OverflowBar(
+                                  spacing: 0,
+                                  overflowAlignment: OverflowBarAlignment.end,
                                   children: [
-                                    IconButton(
-                                        onPressed: () {
-                                          context
-                                              .read<BloomeePlayerCubit>()
-                                              .bloomeePlayer
-                                              .loadPlaylist(
-                                                  MediaPlaylist(
-                                                      mediaItems: state
-                                                          .mediaPlaylist
-                                                          .mediaItems,
-                                                      playlistName: state
-                                                          .mediaPlaylist
-                                                          .playlistName),
-                                                  doPlay: true,
-                                                  shuffling: true);
+                                    Builder(builder: (ctx) {
+                                      final downloaded = ctx
+                                          .watch<DownloaderCubit>()
+                                          .state
+                                          .downloaded;
+                                      final allDownloaded = state.mediaPlaylist
+                                              .mediaItems.isNotEmpty &&
+                                          state.mediaPlaylist.mediaItems.every(
+                                              (s) => downloaded
+                                                  .any((d) => d.id == s.id));
+
+                                      if (allDownloaded) {
+                                        return Tooltip(
+                                          message: 'Available Offline',
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: getFBColor(ctx)[1]
+                                                  .withValues(alpha: 0.08),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.offline_pin_rounded,
+                                              size: 22,
+                                              color: getFBColor(ctx)[0]
+                                                  .withValues(alpha: 0.85),
+                                            ),
+                                          ),
+                                        );
+                                      }
+
+                                      return IconButton(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            6, 2, 6, 2),
+                                        constraints: const BoxConstraints(
+                                            minWidth: 36, minHeight: 36),
+                                        tooltip: 'Download playlist',
+                                        icon: Icon(
+                                          MingCute.download_2_fill,
+                                          size: 20,
+                                          color: getFBColor(ctx)[0]
+                                              .withValues(alpha: 0.9),
+                                        ),
+                                        style: ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStatePropertyAll(
+                                                  getFBColor(ctx)[1]
+                                                      .withValues(alpha: 0.06)),
+                                          shape: MaterialStatePropertyAll(
+                                            RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8)),
+                                          ),
+                                        ),
+                                        onPressed: () async {
+                                          final items =
+                                              state.mediaPlaylist.mediaItems;
+                                          final count = items.length;
+                                          final confirmed =
+                                              await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              backgroundColor:
+                                                  Default_Theme.themeColor,
+                                              title: const Text(
+                                                  'Download playlist'),
+                                              content: Text(
+                                                  'Do you want to download $count songs from "${state.mediaPlaylist.playlistName}"? This will add them to the download queue.'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                          context, false),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                ElevatedButton(
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Default_Theme
+                                                            .accentColor2,
+                                                    foregroundColor:
+                                                        Default_Theme
+                                                            .primaryColor2,
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 14,
+                                                      vertical: 10,
+                                                    ),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              18),
+                                                    ),
+                                                    elevation: 0,
+                                                  ),
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                          context, true),
+                                                  child: const Text(
+                                                      'Download All'),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirmed == true) {
+                                            // Show a progress dialog and enqueue items slowly
+                                            await _showAddToDownloadProgress(
+                                                context, items);
+                                            SnackbarService.showMessage(
+                                                'Added $count songs to download queue');
+                                          }
                                         },
-                                        padding: EdgeInsets.zero,
-                                        icon: Icon(MingCute.shuffle_line,
-                                            color: Default_Theme.primaryColor1
-                                                .withOpacity(0.8))),
+                                      );
+                                    }),
+                                    // --- END: DOWNLOAD / DOWNLOADED INDICATOR ---
+                                    Tooltip(
+                                      message: 'Shuffle',
+                                      child: IconButton(
+                                          onPressed: () {
+                                            context
+                                                .read<BloomeePlayerCubit>()
+                                                .bloomeePlayer
+                                                .loadPlaylist(
+                                                    MediaPlaylist(
+                                                        mediaItems: state
+                                                            .mediaPlaylist
+                                                            .mediaItems,
+                                                        playlistName: state
+                                                            .mediaPlaylist
+                                                            .playlistName),
+                                                    doPlay: true,
+                                                    shuffling: true);
+                                          },
+                                          padding: EdgeInsets.zero,
+                                          icon: Icon(MingCute.shuffle_line,
+                                              color: Default_Theme.primaryColor1
+                                                  .withValues(alpha: 0.8))),
+                                    ),
                                     Padding(
                                       padding: const EdgeInsets.only(
                                           right: 2, left: 5),
@@ -409,14 +564,17 @@ class PlaylistView extends StatelessWidget {
                                         },
                                       ),
                                     ),
-                                    IconButton(
-                                        onPressed: () {
-                                          showPlaylistOptsInrSheet(
-                                              context, state.mediaPlaylist);
-                                        },
-                                        icon: Icon(MingCute.more_2_line,
-                                            color: Default_Theme.primaryColor1
-                                                .withOpacity(0.8))),
+                                    Tooltip(
+                                      message: 'More Options',
+                                      child: IconButton(
+                                          onPressed: () {
+                                            showPlaylistOptsInrSheet(
+                                                context, state.mediaPlaylist);
+                                          },
+                                          icon: Icon(MingCute.more_2_line,
+                                              color: Default_Theme.primaryColor1
+                                                  .withValues(alpha: 0.8))),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -503,6 +661,102 @@ class PlaylistView extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+
+  Future<void> _showAddToDownloadProgress(
+      BuildContext context, List<MediaItemModel> items) async {
+    if (items.isEmpty) return;
+
+    // Use a dialog with StatefulBuilder to update progress
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        int completed = 0;
+        String currentTitle = '';
+        void Function(void Function()) setStateRef = (_) {};
+
+        // Start the enqueue process after the dialog is built
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          for (final song in items) {
+            // update current title and rebuild
+            setStateRef(() {
+              currentTitle = song.title;
+            });
+
+            // enqueue the song via cubit
+            try {
+              context
+                  .read<DownloaderCubit>()
+                  .downloadSong(song, showSnackbar: false);
+            } catch (_) {}
+
+            // small delay so UI remains responsive and progress is visible
+            await Future.delayed(const Duration(milliseconds: 180));
+
+            setStateRef(() {
+              completed++;
+            });
+          }
+
+          // close dialog when done
+          if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+
+          // Show single snackbar for bulk download
+          if (dialogCtx.mounted) {
+            SnackbarService.showMessage("Playlist added to download queue");
+          }
+        });
+
+        return StatefulBuilder(builder: (sbCtx, sbSetState) {
+          // capture setState so the enqueue loop can update the dialog
+          setStateRef = sbSetState;
+
+          final double progress =
+              items.isEmpty ? 0 : (completed / items.length).clamp(0.0, 1.0);
+
+          return AlertDialog(
+            backgroundColor: Default_Theme.themeColor,
+            contentPadding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+            content: SizedBox(
+              width: 320,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Adding to download queue',
+                    style: Default_Theme.secondoryTextStyleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${completed}/${items.length} ${completed == 1 ? 'item' : 'items'}',
+                    style: Default_Theme.secondoryTextStyle,
+                  ),
+                  const SizedBox(height: 12),
+                  LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor:
+                        Default_Theme.primaryColor1.withValues(alpha: 0.12),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Default_Theme.primaryColor1.withValues(alpha: 0.95)),
+                    minHeight: 6,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    currentTitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Default_Theme.secondoryTextStyle
+                        .merge(const TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
     );
   }
 }

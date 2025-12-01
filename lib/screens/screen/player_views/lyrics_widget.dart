@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:Bloomee/blocs/lyrics/lyrics_cubit.dart';
 import 'package:Bloomee/blocs/mediaPlayer/bloomee_player_cubit.dart';
-import 'package:Bloomee/screens/screen/player_views/lyrics_menu.dart';
+import 'package:Bloomee/screens/screen/player_views/fullscreen_lyrics_view.dart';
 import 'package:Bloomee/screens/widgets/sign_board_widget.dart';
 import 'package:Bloomee/theme_data/default.dart';
 import 'package:flutter/material.dart';
@@ -45,11 +45,41 @@ class LyricsWidget extends StatelessWidget {
               right: 3,
               bottom: 0,
               child: Container(
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.black.withValues(alpha: 0.6),
+                  shape: BoxShape.circle,
                 ),
-                child: LyricsMenu(state: state),
+                child: Tooltip(
+                  message: 'Fullscreen Lyrics',
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  const FullscreenLyricsView(),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          transitionDuration: const Duration(milliseconds: 300),
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      MingCute.fullscreen_fill,
+                      size: 20,
+                    ),
+                    color: Default_Theme.primaryColor1.withValues(alpha: 0.9),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ),
               ),
             ),
           ],
@@ -120,7 +150,7 @@ class PlainLyricsWidget extends StatelessWidget {
               fontSize: 18,
               fontFamily: 'NotoSans',
               fontWeight: FontWeight.w600,
-              color: Default_Theme.primaryColor1)),
+              color: Colors.white)),
         ),
       ),
     );
@@ -266,8 +296,8 @@ class _SyncedLyricsWidgetState extends State<SyncedLyricsWidget> {
               fontFamily: 'NotoSans',
               fontWeight: FontWeight.bold,
               color: isCurrentLyric(index)
-                  ? Default_Theme.accentColor2
-                  : Default_Theme.primaryColor2,
+                  ? Colors.white
+                  : Default_Theme.primaryColor2.withOpacity(0.4),
             )),
           );
         },

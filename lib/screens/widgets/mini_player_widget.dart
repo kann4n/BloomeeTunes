@@ -3,12 +3,12 @@ import 'dart:ui';
 import 'package:Bloomee/blocs/add_to_playlist/cubit/add_to_playlist_cubit.dart';
 import 'package:Bloomee/blocs/mediaPlayer/bloomee_player_cubit.dart';
 import 'package:Bloomee/blocs/mini_player/mini_player_bloc.dart';
+import 'package:Bloomee/blocs/player_overlay/player_overlay_cubit.dart';
 import 'package:Bloomee/model/songModel.dart';
 import 'package:Bloomee/routes_and_consts/global_str_consts.dart';
 import 'package:Bloomee/theme_data/default.dart';
 import 'package:Bloomee/utils/imgurl_formator.dart';
 import 'package:Bloomee/utils/load_Image.dart';
-import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -76,7 +76,7 @@ class MiniPlayerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        context.pushNamed(GlobalStrConsts.playerScreen);
+        context.read<PlayerOverlayCubit>().showPlayer();
       },
       onHorizontalDragEnd: (details) {
         if (details.primaryVelocity! < -10) {
@@ -88,7 +88,7 @@ class MiniPlayerCard extends StatelessWidget {
       },
       onVerticalDragEnd: (details) {
         if (details.primaryVelocity! < -10) {
-          context.pushNamed(GlobalStrConsts.playerScreen);
+          context.read<PlayerOverlayCubit>().showPlayer();
         }
         if (details.primaryVelocity! > 10) {
           // context.read<BloomeePlayerCubit>().bloomeePlayer.stop();
@@ -99,27 +99,30 @@ class MiniPlayerCard extends StatelessWidget {
         child: SizedBox(
           height: 70,
           child: Stack(
+            clipBehavior: Clip.hardEdge,
             children: [
-              Container(
-                color: Default_Theme.themeColor,
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.width,
-                child: LoadImageCached(
-                  imageUrl: formatImgURL(
-                      state.song.artUri.toString(), ImageQuality.low),
-                  fit: BoxFit.cover,
-                ),
-              ),
+              // Background image with blur applied directly
               Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaY: 18,
-                    sigmaX: 18,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: 25,
+                    sigmaY: 25,
+                    tileMode: TileMode.decal,
                   ),
                   child: Container(
-                    color: Colors.black.withOpacity(
-                        0.5), // Keep the container color transparent
+                    color: Default_Theme.themeColor,
+                    child: LoadImageCached(
+                      imageUrl: formatImgURL(
+                          state.song.artUri.toString(), ImageQuality.low),
+                      fit: BoxFit.cover,
+                    ),
                   ),
+                ),
+              ),
+              // Dark overlay for better contrast
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.5),
                 ),
               ),
               Row(
@@ -162,7 +165,7 @@ class MiniPlayerCard extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12.5,
                                   color: Default_Theme.primaryColor1
-                                      .withOpacity(0.7))),
+                                      .withValues(alpha: 0.7))),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -244,33 +247,40 @@ class MiniPlayerCard extends StatelessWidget {
                       icon: const Icon(FontAwesome.plus_solid, size: 25)),
                 ],
               ),
-              isCompleted
-                  ? const SizedBox()
-                  : Positioned.fill(
-                      bottom: 2,
-                      left: 8,
-                      right: 8,
-                      top: 68,
-                      child: StreamBuilder<ProgressBarStreams>(
-                          stream: context
-                              .watch<BloomeePlayerCubit>()
-                              .progressStreams,
-                          builder: (context, snapshot) {
-                            try {
-                              if (snapshot.hasData) {
-                                return ProgressBar(
-                                    thumbRadius: 0,
-                                    barHeight: 4,
-                                    baseBarColor: Colors.transparent,
-                                    timeLabelLocation: TimeLabelLocation.none,
-                                    progress: snapshot.data!.currentPos,
-                                    total: snapshot
-                                        .data!.currentPlaybackState.duration!);
-                              }
-                            } catch (e) {}
-                            return const SizedBox();
-                          }),
-                    )
+              if (!isCompleted)
+                Positioned(
+                  bottom: 0,
+                  left: 8,
+                  right: 8,
+                  height: 4,
+                  child: StreamBuilder<ProgressBarStreams>(
+                    stream: context.watch<BloomeePlayerCubit>().progressStreams,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData &&
+                          snapshot.data!.currentPlaybackState.duration !=
+                              null) {
+                        final progress = snapshot.data!.currentPos;
+                        final total =
+                            snapshot.data!.currentPlaybackState.duration!;
+                        final progressFraction = total.inMilliseconds > 0
+                            ? progress.inMilliseconds / total.inMilliseconds
+                            : 0.0;
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            value: progressFraction.clamp(0.0, 1.0),
+                            backgroundColor: Colors.transparent,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Default_Theme.accentColor2,
+                            ),
+                            minHeight: 4,
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                )
             ],
           ),
         ),

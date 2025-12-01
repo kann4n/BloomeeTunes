@@ -120,7 +120,7 @@ class _VolumeDragControllerState extends State<VolumeDragController> {
                       child: Container(
                         padding: const EdgeInsets.all(10.0),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(20.0),
                         ),
                         child: Column(
@@ -138,7 +138,7 @@ class _VolumeDragControllerState extends State<VolumeDragController> {
                                 data: SliderTheme.of(context).copyWith(
                                   inactiveTrackColor: Default_Theme
                                       .primaryColor2
-                                      .withOpacity(0.3),
+                                      .withValues(alpha: 0.3),
                                   thumbShape: const RoundSliderThumbShape(
                                       enabledThumbRadius: 6.0),
                                   overlayShape: const RoundSliderOverlayShape(
@@ -150,9 +150,14 @@ class _VolumeDragControllerState extends State<VolumeDragController> {
                                 child: Slider(
                                   value: _volume,
                                   onChanged: (value) {
-                                    setState(() {
-                                      _volume = value;
-                                    });
+                                    // update local UI, audio player and keep the
+                                    // volume controller visible while interacting
+                                    setVolume(value);
+                                    _startTimer();
+                                  },
+                                  onChangeEnd: (value) {
+                                    // ensure hide timer restarts when user lifts finger
+                                    _startTimer();
                                   },
                                   min: 0.0,
                                   max: 1.0,

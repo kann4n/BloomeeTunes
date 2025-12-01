@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io' as io;
 import 'package:Bloomee/blocs/downloader/cubit/downloader_cubit.dart';
 import 'package:Bloomee/blocs/global_events/global_events_cubit.dart';
@@ -8,6 +7,7 @@ import 'package:Bloomee/blocs/lastdotfm/lastdotfm_cubit.dart';
 import 'package:Bloomee/blocs/lyrics/lyrics_cubit.dart';
 import 'package:Bloomee/blocs/mini_player/mini_player_bloc.dart';
 import 'package:Bloomee/blocs/notification/notification_cubit.dart';
+import 'package:Bloomee/blocs/player_overlay/player_overlay_cubit.dart';
 import 'package:Bloomee/blocs/search_suggestions/search_suggestion_bloc.dart';
 import 'package:Bloomee/blocs/settings_cubit/cubit/settings_cubit.dart';
 import 'package:Bloomee/blocs/timer/timer_bloc.dart';
@@ -34,18 +34,19 @@ import 'package:Bloomee/screens/screen/library_views/cubit/import_playlist_cubit
 import 'package:Bloomee/services/db/cubit/bloomee_db_cubit.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'package:share_handler/share_handler.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'blocs/mediaPlayer/bloomee_player_cubit.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:Bloomee/services/discord_service.dart';
 
-void processIncomingIntent(List<SharedMediaFile> sharedMediaFiles) {
-  if (isUrl(sharedMediaFiles[0].path)) {
-    final urlType = getUrlType(sharedMediaFiles[0].path);
+void processIncomingIntent(SharedMedia sharedMedia) {
+  // Check if there's text content that might be a URL
+  if (sharedMedia.content != null && isUrl(sharedMedia.content!)) {
+    final urlType = getUrlType(sharedMedia.content!);
     switch (urlType) {
       case UrlType.spotifyTrack:
-        ExternalMediaImporter.sfyMediaImporter(sharedMediaFiles[0].path)
+        ExternalMediaImporter.sfyMediaImporter(sharedMedia.content!)
             .then((value) async {
           if (value != null) {
             await bloomeePlayerCubit.bloomeePlayer.addQueueItem(
@@ -64,32 +65,37 @@ void processIncomingIntent(List<SharedMediaFile> sharedMediaFiles) {
         SnackbarService.showMessage("Import Spotify Album from library!");
         break;
       case UrlType.youtubeVideo:
-        ExternalMediaImporter.ytMediaImporter(sharedMediaFiles[0].path)
+        ExternalMediaImporter.ytMediaImporter(sharedMedia.content!)
             .then((value) async {
           if (value != null) {
-            await bloomeePlayerCubit.bloomeePlayer.addQueueItem(
-              value,
-            );
+            await bloomeePlayerCubit.bloomeePlayer
+                .updateQueue([value], doPlay: true);
           }
         });
         break;
       case UrlType.other:
-        if (sharedMediaFiles[0].mimeType == "application/octet-stream") {
+        // Handle as file if it's a file URL
+        if (sharedMedia.attachments != null &&
+            sharedMedia.attachments!.isNotEmpty) {
+          final attachment = sharedMedia.attachments!.first;
           SnackbarService.showMessage("Processing File...");
-          importItems(
-              Uri.parse(sharedMediaFiles[0].path).toFilePath().toString());
+          importItems(attachment!.path);
         }
     }
+  } else if (sharedMedia.attachments != null &&
+      sharedMedia.attachments!.isNotEmpty) {
+    // Handle attachments
+    // todo: handle multiple attachments
   }
 }
 
 Future<void> importItems(String path) async {
-  bool _res = await ImportExportService.importMediaItem(path);
-  if (_res) {
+  bool res = await ImportExportService.importMediaItem(path);
+  if (res) {
     SnackbarService.showMessage("Media Item Imported");
   } else {
-    _res = await ImportExportService.importPlaylist(path);
-    if (_res) {
+    res = await ImportExportService.importPlaylist(path);
+    if (res) {
       SnackbarService.showMessage("Playlist Imported");
     } else {
       SnackbarService.showMessage("Invalid File Format");
@@ -142,46 +148,42 @@ class _MyAppState extends State<MyApp> {
   // Initialize the player
   // This widget is the root of your application.
   late StreamSubscription _intentSub;
-  final sharedMediaFiles = <SharedMediaFile>[];
+  SharedMedia? sharedMedia;
   @override
   void initState() {
     super.initState();
     if (io.Platform.isAndroid) {
-      // For sharing or opening urls/text coming from outside the app while the app is in the memory
-      _intentSub =
-          ReceiveSharingIntent.instance.getMediaStream().listen((event) {
-        sharedMediaFiles.clear();
-        sharedMediaFiles.addAll(event);
-        if (sharedMediaFiles.isNotEmpty) {
-          log(sharedMediaFiles[0].mimeType.toString(), name: "Shared Files");
-          log(sharedMediaFiles[0].path, name: "Shared Files");
-          processIncomingIntent(sharedMediaFiles);
-        }
-
-        // Tell the library that we are done processing the intent.
-        ReceiveSharingIntent.instance.reset();
-      });
-
-      // For sharing or opening urls/text coming from outside the app while the app is closed
-
-      ReceiveSharingIntent.instance.getInitialMedia().then((event) {
-        sharedMediaFiles.clear();
-        sharedMediaFiles.addAll(event);
-        if (sharedMediaFiles.isNotEmpty) {
-          log(sharedMediaFiles[0].mimeType.toString(),
-              name: "Shared Files Offline");
-          log(sharedMediaFiles[0].path, name: "Shared Files Offline");
-          processIncomingIntent(sharedMediaFiles);
-        }
-        ReceiveSharingIntent.instance.reset();
-      });
+      initPlatformState();
     }
+  }
+
+  // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initPlatformState() async {
+    final handler = ShareHandlerPlatform.instance;
+    sharedMedia = await handler.getInitialSharedMedia();
+
+    _intentSub = handler.sharedMediaStream.listen((SharedMedia media) {
+      if (!mounted) return;
+      setState(() {
+        sharedMedia = media;
+      });
+      if (sharedMedia != null) {
+        processIncomingIntent(sharedMedia!);
+      }
+    });
+    if (!mounted) return;
+
+    setState(() {
+      // If there's initial shared media, process it
+      if (sharedMedia != null) {
+        processIncomingIntent(sharedMedia!);
+      }
+    });
   }
 
   @override
   void dispose() {
     _intentSub.cancel();
-    bloomeePlayerCubit.bloomeePlayer.audioPlayer.dispose();
     bloomeePlayerCubit.close();
     if (io.Platform.isWindows || io.Platform.isLinux || io.Platform.isMacOS) {
       DiscordService.clearPresence();
@@ -253,6 +255,10 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider(
           create: (context) => GlobalEventsCubit(),
+          lazy: false,
+        ),
+        BlocProvider(
+          create: (context) => PlayerOverlayCubit(),
           lazy: false,
         ),
       ],
@@ -366,10 +372,6 @@ class _MyAppState extends State<MyApp> {
                 }),
               },
               builder: (context, child) => ResponsiveBreakpoints.builder(
-                child: GlobalEventListener(
-                  child: child!,
-                  navigatorKey: GlobalRoutes.globalRouterKey,
-                ),
                 breakpoints: [
                   const Breakpoint(start: 0, end: 450, name: MOBILE),
                   const Breakpoint(start: 451, end: 800, name: TABLET),
@@ -377,6 +379,10 @@ class _MyAppState extends State<MyApp> {
                   const Breakpoint(
                       start: 1921, end: double.infinity, name: '4K'),
                 ],
+                child: GlobalEventListener(
+                  navigatorKey: GlobalRoutes.globalRouterKey,
+                  child: child!,
+                ),
               ),
               scaffoldMessengerKey: SnackbarService.messengerKey,
               routerConfig: GlobalRoutes.globalRouter,
@@ -397,6 +403,9 @@ class CustomScrollBehavior extends MaterialScrollBehavior {
   Set<PointerDeviceKind> get dragDevices => {
         PointerDeviceKind.touch,
         PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.invertedStylus,
         // etc.
       };
 }
